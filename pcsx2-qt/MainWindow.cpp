@@ -205,6 +205,7 @@ void MainWindow::setupAdditionalUi()
 	m_game_list_widget = new GameListWidget(getContentParent());
 	m_game_list_widget->initialize();
 	m_ui.actionGridViewShowTitles->setChecked(m_game_list_widget->getShowGridCoverTitles());
+	m_ui.actionGameListClickDrag->setChecked(m_game_list_widget->getClickDragEnabled());
 	m_ui.mainContainer->addWidget(m_game_list_widget);
 
 	m_status_progress_widget = new QProgressBar(m_ui.statusBar);
@@ -362,6 +363,7 @@ void MainWindow::connectSignals()
 	connect(m_ui.actionOpenDataDirectory, &QAction::triggered, this, &MainWindow::onToolsOpenDataDirectoryTriggered);
 	connect(m_ui.actionCoverDownloader, &QAction::triggered, this, &MainWindow::onToolsCoverDownloaderTriggered);
 	connect(m_ui.actionGridViewShowTitles, &QAction::triggered, m_game_list_widget, &GameListWidget::setShowCoverTitles);
+	connect(m_ui.actionGameListClickDrag, &QAction::triggered, m_game_list_widget, &GameListWidget::setClickDragEnabled);
 	connect(m_ui.actionGridViewZoomIn, &QAction::triggered, m_game_list_widget, [this]() {
 		if (isShowingGameList())
 			m_game_list_widget->gridZoomIn();
@@ -374,6 +376,8 @@ void MainWindow::connectSignals()
 	connect(m_game_list_widget, &GameListWidget::layoutChange, this, [this]() {
 		QSignalBlocker sb(m_ui.actionGridViewShowTitles);
 		m_ui.actionGridViewShowTitles->setChecked(m_game_list_widget->getShowGridCoverTitles());
+		QSignalBlocker sb2(m_ui.actionGameListClickDrag);
+		m_ui.actionGameListClickDrag->setChecked(m_game_list_widget->getClickDragEnabled());
 		updateGameGridActions(m_game_list_widget->isShowingGameGrid());
 	});
 

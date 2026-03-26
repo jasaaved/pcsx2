@@ -214,6 +214,7 @@ void GameListWidget::initialize()
 {
 	const float cover_scale = Host::GetBaseFloatSettingValue("UI", "GameListCoverArtScale", 0.45f);
 	const bool show_cover_titles = Host::GetBaseBoolSettingValue("UI", "GameListShowCoverTitles", true);
+	m_click_drag_enabled = Host::GetBaseBoolSettingValue("UI", "GameListClickDrag", true);
 	m_model = new GameListModel(cover_scale, show_cover_titles, devicePixelRatioF(), this);
 	m_model->updateCacheSize(width(), height());
 
@@ -243,6 +244,7 @@ void GameListWidget::initialize()
 	connect(m_ui.viewGameGrid, &QPushButton::clicked, this, &GameListWidget::showGameGrid);
 	connect(m_ui.gridScale, &QSlider::valueChanged, this, &GameListWidget::gridIntScale);
 	connect(m_ui.viewGridTitles, &QPushButton::toggled, this, &GameListWidget::setShowCoverTitles);
+	connect(m_ui.viewClickDrag, &QPushButton::toggled, this, &GameListWidget::setClickDragEnabled);
 	connect(m_ui.filterType, &QComboBox::currentIndexChanged, this, [this](int index) {
 		m_sort_model->setFilterType((index == 0) ? GameList::EntryType::Count : static_cast<GameList::EntryType>(index - 1));
 	});
@@ -271,7 +273,8 @@ void GameListWidget::initialize()
 	m_table_view->horizontalHeader()->setSectionsMovable(true);
 	m_table_view->verticalHeader()->hide();
 	m_table_view->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
-	QScroller::grabGesture(m_table_view->viewport(), QScroller::LeftMouseButtonGesture);
+	if (m_click_drag_enabled)
+		QScroller::grabGesture(m_table_view->viewport(), QScroller::LeftMouseButtonGesture);
 
 	// Custom painter to center-align DisplayRoles (icons)
 	m_table_view->setItemDelegateForColumn(0, new GameListIconStyleDelegate(this));
@@ -330,7 +333,8 @@ void GameListWidget::initialize()
 	m_list_view->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
 	m_list_view->verticalScrollBar()->setSingleStep(15);
 	onCoverScaleChanged();
-	QScroller::grabGesture(m_list_view->viewport(), QScroller::LeftMouseButtonGesture);
+	if (m_click_drag_enabled)
+		QScroller::grabGesture(m_list_view->viewport(), QScroller::LeftMouseButtonGesture);
 
 	connect(m_list_view->selectionModel(), &QItemSelectionModel::currentChanged, this,
 		&GameListWidget::onSelectionModelCurrentChanged);
@@ -477,6 +481,35 @@ bool GameListWidget::isShowingGameGrid() const
 bool GameListWidget::getShowGridCoverTitles() const
 {
 	return m_model->getShowCoverTitles();
+}
+
+bool GameListWidget::getClickDragEnabled() const
+{
+	return m_click_drag_enabled;
+}
+
+void GameListWidget::setClickDragEnabled(bool enabled)
+{
+	if (m_click_drag_enabled == enabled)
+		return;
+
+	m_click_drag_enabled = enabled;
+	Host::SetBaseBoolSettingValue("UI", "GameListClickDrag", enabled);
+	Host::CommitBaseSettingChanges();
+
+	if (enabled)
+	{
+		QScroller::grabGesture(m_table_view->viewport(), QScroller::LeftMouseButtonGesture);
+		QScroller::grabGesture(m_list_view->viewport(), QScroller::LeftMouseButtonGesture);
+	}
+	else
+	{
+		QScroller::ungrabGesture(m_table_view->viewport());
+		QScroller::ungrabGesture(m_list_view->viewport());
+	}
+
+	updateToolbar();
+	emit layoutChange();
 }
 
 void GameListWidget::refresh(bool invalidate_cache, bool popup_on_error)
@@ -718,6 +751,10 @@ void GameListWidget::updateToolbar()
 	{
 		QSignalBlocker sb(m_ui.viewGridTitles);
 		m_ui.viewGridTitles->setChecked(m_model->getShowCoverTitles());
+	}
+	{
+		QSignalBlocker sb(m_ui.viewClickDrag);
+		m_ui.viewClickDrag->setChecked(m_click_drag_enabled);
 	}
 	{
 		QSignalBlocker sb(m_ui.gridScale);

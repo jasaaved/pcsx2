@@ -59,6 +59,7 @@ public:
 	bool isShowingGameList() const;
 	bool isShowingGameGrid() const;
 	bool getShowGridCoverTitles() const;
+	bool getClickDragEnabled() const;
 
 	std::optional<GameList::Entry> getSelectedEntry() const;
 
@@ -93,6 +94,7 @@ public Q_SLOTS:
 	void showGameList();
 	void showGameGrid();
 	void setShowCoverTitles(bool enabled);
+	void setClickDragEnabled(bool enabled);
 	void gridZoomIn();
 	void gridZoomOut();
 	void gridIntScale(int int_scale);
@@ -125,6 +127,8 @@ private:
 	Ui::EmptyGameListWidget m_empty_ui;
 
 	GameListRefreshThread* m_refresh_thread = nullptr;
+
+	bool m_click_drag_enabled = true;
 
 	QMovie* m_background_movie = nullptr;
 	QPixmap m_background_pixmap;

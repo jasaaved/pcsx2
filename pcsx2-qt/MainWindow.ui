@@ -175,6 +175,7 @@
     <addaction name="menuWindowSize"/>
     <addaction name="separator"/>
     <addaction name="actionGridViewShowTitles"/>
+    <addaction name="actionGameListClickDrag"/>
     <addaction name="actionGridViewZoomIn"/>
     <addaction name="actionGridViewZoomOut"/>
     <addaction name="actionGridViewRefreshCovers"/>
@@ -806,6 +807,20 @@
    </property>
    <property name="text">
     <string>Show Titl&amp;es (Grid View)</string>
+   </property>
+  </action>
+  <action name="actionGameListClickDrag">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="drag-move-2-line"/>
+   </property>
+   <property name="text">
+    <string>Click-and-Drag Scrolling</string>
    </property>
   </action>
   <action name="actionGridViewZoomIn">
