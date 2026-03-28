@@ -107,6 +107,10 @@ namespace ImGuiManager
 	/// Called on the CPU thread when any input event fires. Allows imgui to take over controller navigation.
 	bool ProcessGenericInputEvent(GenericInputBinding key, InputLayout layout, float value);
 
+	/// Called on the CPU thread for a bidirectional analog axis event. Decomposes the signed value into
+	/// two half-axis ImGui events so analog sticks can drive Big Picture navigation.
+	void ProcessGenericAxisEvent(GenericInputBinding negative_key, GenericInputBinding positive_key, InputLayout layout, float value);
+
 	/// Called to swap North/West gamepad buttons within ImGui
 	void SwapGamepadNorthWest(bool value);
 
