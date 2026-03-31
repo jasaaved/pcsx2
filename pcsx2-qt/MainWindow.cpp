@@ -2617,7 +2617,6 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 				m_display_surface->showFullScreen();
 				QGuiApplication::sync();
 				m_display_surface->showNormal();
-				restoreDisplayWindowGeometryFromConfig(target_screen);
 			}
 			else
 			{
@@ -2640,7 +2639,6 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 				m_display_container->showFullScreen();
 				QGuiApplication::sync();
 				m_display_container->showNormal();
-				restoreDisplayWindowGeometryFromConfig(target_screen);
 			}
 			else
 			{
