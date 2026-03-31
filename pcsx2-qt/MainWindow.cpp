@@ -2615,8 +2615,11 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 			if (use_wayland_fullscreen_trick)
 			{
 				m_display_surface->showFullScreen();
-				QGuiApplication::sync();
-				m_display_surface->showNormal();
+				connect(m_display_surface, &DisplaySurface::windowStateChanged, m_display_surface,
+					[this](Qt::WindowState state) {
+						if (state == Qt::WindowFullScreen)
+							m_display_surface->showNormal();
+					}, Qt::SingleShotConnection);
 			}
 			else
 			{
@@ -2637,8 +2640,14 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 			if (use_wayland_fullscreen_trick)
 			{
 				m_display_container->showFullScreen();
-				QGuiApplication::sync();
-				m_display_container->showNormal();
+				if (QWindow* const handle = m_display_container->windowHandle())
+				{
+					connect(handle, &QWindow::windowStateChanged, handle,
+						[this](Qt::WindowState state) {
+							if (state == Qt::WindowFullScreen)
+								m_display_container->showNormal();
+						}, Qt::SingleShotConnection);
+				}
 			}
 			else
 			{
