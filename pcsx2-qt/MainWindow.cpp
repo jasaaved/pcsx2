@@ -2586,6 +2586,7 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 		else
 			m_display_surface->showNormal();
 #else
+		m_display_container->setScreen(target_screen);
 		if (monitor_index > 0 || (isVisible() && g_emu_thread->shouldRenderToMain()))
 			m_display_container->move(target_screen->availableGeometry().topLeft());
 		else
@@ -2603,24 +2604,33 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 		if (m_is_temporarily_windowed && g_emu_thread->shouldRenderToMain())
 			m_display_surface->setGeometry(geometry());
 		else
+		{
+			if (monitor_index > 0)
+				m_display_surface->setScreen(target_screen);
 			restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+		}
 		m_display_surface->showNormal();
 #else
 		if (m_is_temporarily_windowed && g_emu_thread->shouldRenderToMain())
 			m_display_container->setGeometry(geometry());
 		else
+		{
+			if (monitor_index > 0)
+				m_display_container->setScreen(target_screen);
 			restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+		}
 		m_display_container->showNormal();
 #endif
 	}
 	else
 	{
-		if (monitor_index > 0)
+		if (monitor_index > 0 && screen() != target_screen)
 		{
-			if (screen() != target_screen)
-				m_pre_game_main_window_geometry = saveGeometry();
+			m_pre_game_main_window_geometry = saveGeometry();
+			m_pre_game_main_window_screen = screen();
+			windowHandle()->setScreen(target_screen);
 
-			if (!m_target_screen_main_window_geometry.isEmpty())
+			if (!m_target_screen_main_window_geometry.isEmpty() && m_target_screen_for_main_window_geometry == target_screen)
 				restoreGeometry(m_target_screen_main_window_geometry);
 			else
 			{
@@ -2742,11 +2752,20 @@ void MainWindow::destroyDisplayWidget(bool show_game_list)
 			const QList<QScreen*> screens = QGuiApplication::screens();
 			QScreen* target_screen = (monitor_index > 0 && monitor_index <= screens.size()) ? screens[monitor_index - 1] : nullptr;
 			if (target_screen && screen() == target_screen)
+			{
 				m_target_screen_main_window_geometry = saveGeometry();
+				m_target_screen_for_main_window_geometry = target_screen;
+			}
 			else
+			{
 				m_target_screen_main_window_geometry.clear();
+				m_target_screen_for_main_window_geometry = nullptr;
+			}
+			if (m_pre_game_main_window_screen)
+				windowHandle()->setScreen(m_pre_game_main_window_screen);
 			restoreGeometry(m_pre_game_main_window_geometry);
 			m_pre_game_main_window_geometry.clear();
+			m_pre_game_main_window_screen = nullptr;
 		}
 		if (show_game_list)
 		{

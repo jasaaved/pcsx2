@@ -322,6 +322,8 @@ private:
 	bool m_is_temporarily_windowed = false;
 	QByteArray m_pre_game_main_window_geometry;
 	QByteArray m_target_screen_main_window_geometry;
+	QScreen* m_pre_game_main_window_screen = nullptr;
+	QScreen* m_target_screen_for_main_window_geometry = nullptr;
 
 	QString m_last_fps_status;
 
