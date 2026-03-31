@@ -2600,26 +2600,54 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 	}
 	else if (!render_to_main)
 	{
+		const bool use_wayland_fullscreen_trick =
+			monitor_index > 0 && QGuiApplication::platformName() == QLatin1String("wayland");
 #ifdef DISPLAY_SURFACE_WINDOW
 		if (m_is_temporarily_windowed && g_emu_thread->shouldRenderToMain())
+		{
 			m_display_surface->setGeometry(geometry());
+			m_display_surface->showNormal();
+		}
 		else
 		{
 			if (monitor_index > 0)
 				m_display_surface->setScreen(target_screen);
-			restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+			if (use_wayland_fullscreen_trick)
+			{
+				m_display_surface->showFullScreen();
+				QGuiApplication::sync();
+				m_display_surface->showNormal();
+				restoreDisplayWindowGeometryFromConfig(target_screen);
+			}
+			else
+			{
+				restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+				m_display_surface->showNormal();
+			}
 		}
-		m_display_surface->showNormal();
 #else
 		if (m_is_temporarily_windowed && g_emu_thread->shouldRenderToMain())
+		{
 			m_display_container->setGeometry(geometry());
+			m_display_container->showNormal();
+		}
 		else
 		{
 			if (monitor_index > 0)
 				m_display_container->setScreen(target_screen);
-			restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+			if (use_wayland_fullscreen_trick)
+			{
+				m_display_container->showFullScreen();
+				QGuiApplication::sync();
+				m_display_container->showNormal();
+				restoreDisplayWindowGeometryFromConfig(target_screen);
+			}
+			else
+			{
+				restoreDisplayWindowGeometryFromConfig(monitor_index > 0 ? target_screen : nullptr);
+				m_display_container->showNormal();
+			}
 		}
-		m_display_container->showNormal();
 #endif
 	}
 	else
