@@ -274,7 +274,7 @@ void GameListWidget::initialize()
 	m_table_view->verticalHeader()->hide();
 	m_table_view->setVerticalScrollMode(QAbstractItemView::ScrollMode::ScrollPerPixel);
 	if (m_click_drag_enabled)
-		QScroller::grabGesture(m_table_view->viewport(), QScroller::LeftMouseButtonGesture);
+		QScroller::grabGesture(m_table_view->viewport(), QScroller::TouchGesture);
 
 	// Custom painter to center-align DisplayRoles (icons)
 	m_table_view->setItemDelegateForColumn(0, new GameListIconStyleDelegate(this));
@@ -334,7 +334,7 @@ void GameListWidget::initialize()
 	m_list_view->verticalScrollBar()->setSingleStep(15);
 	onCoverScaleChanged();
 	if (m_click_drag_enabled)
-		QScroller::grabGesture(m_list_view->viewport(), QScroller::LeftMouseButtonGesture);
+		QScroller::grabGesture(m_list_view->viewport(), QScroller::TouchGesture);
 
 	connect(m_list_view->selectionModel(), &QItemSelectionModel::currentChanged, this,
 		&GameListWidget::onSelectionModelCurrentChanged);
@@ -499,8 +499,8 @@ void GameListWidget::setClickDragEnabled(bool enabled)
 
 	if (enabled)
 	{
-		QScroller::grabGesture(m_table_view->viewport(), QScroller::LeftMouseButtonGesture);
-		QScroller::grabGesture(m_list_view->viewport(), QScroller::LeftMouseButtonGesture);
+		QScroller::grabGesture(m_table_view->viewport(), QScroller::TouchGesture);
+		QScroller::grabGesture(m_list_view->viewport(), QScroller::TouchGesture);
 	}
 	else
 	{
