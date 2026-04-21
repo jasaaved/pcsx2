@@ -100,6 +100,22 @@ static std::atomic_bool s_imgui_wants_text{false};
 
 static bool s_gamepad_swap_noth_west = false;
 
+struct ControllerNavState
+{
+	bool dpad_h_held = false;
+	bool dpad_v_held = false;
+
+	struct AxisState
+	{
+		float x = 0.0f, y = 0.0f;
+		bool x_neg_active = false, x_pos_active = false;
+		bool y_neg_active = false, y_pos_active = false;
+	};
+	AxisState left_stick;
+	AxisState right_stick;
+};
+static std::unordered_map<u32, ControllerNavState> s_controller_nav_states;
+
 // mapping of host key -> imgui key
 static std::unordered_map<u32, ImGuiKey> s_imgui_key_map;
 
@@ -1135,7 +1151,7 @@ bool ImGuiManager::ProcessHostKeyEvent(InputBindingKey key, float value)
 	return s_imgui_wants_keyboard.load(std::memory_order_acquire);
 }
 
-bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout layout, float value)
+bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout layout, float value, u32 controller_id)
 {
 	static constexpr ImGuiKey key_map[] = {
 		ImGuiKey_None, // Unknown,
@@ -1173,17 +1189,17 @@ bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout
 		return false;
 
 	// Ignore diagonal D-pad input — neither direction fires when both axes are held simultaneously.
-	static bool s_dpad_h_held = false, s_dpad_v_held = false;
 	const bool is_dpad_h = (key == GenericInputBinding::DPadLeft || key == GenericInputBinding::DPadRight);
 	const bool is_dpad_v = (key == GenericInputBinding::DPadUp || key == GenericInputBinding::DPadDown);
 	if (is_dpad_h || is_dpad_v)
 	{
+		ControllerNavState& nav = s_controller_nav_states[controller_id];
 		if (is_dpad_h)
-			s_dpad_h_held = (value > 0.0f);
+			nav.dpad_h_held = (value > 0.0f);
 		else
-			s_dpad_v_held = (value > 0.0f);
+			nav.dpad_v_held = (value > 0.0f);
 
-		if (s_dpad_h_held && s_dpad_v_held)
+		if (nav.dpad_h_held && nav.dpad_v_held)
 			return false;
 	}
 
@@ -1204,7 +1220,7 @@ bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout
 	return s_imgui_wants_keyboard.load(std::memory_order_acquire);
 }
 
-void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, GenericInputBinding positive_key, InputLayout layout, float value)
+void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, GenericInputBinding positive_key, InputLayout layout, float value, u32 controller_id)
 {
 	// Activate when the stick crosses a high threshold, release only when it drops below a lower
 	// threshold. This hysteresis prevents two problems:
@@ -1219,37 +1235,32 @@ void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, Gen
 	// Ignore diagonal analog stick input — neither axis fires when both exceed the activate threshold.
 	// Also track last sent binary state per direction to avoid bursting duplicate events when
 	// the controller sends many axis updates in quick succession.
-	struct AxisState
-	{
-		float x = 0.0f, y = 0.0f;
-		bool x_neg_active = false, x_pos_active = false;
-		bool y_neg_active = false, y_pos_active = false;
-	};
-	static AxisState s_left_stick, s_right_stick;
+	using AxisState = ControllerNavState::AxisState;
+	ControllerNavState& nav = s_controller_nav_states[controller_id];
 
 	AxisState* state = nullptr;
 	bool is_x_axis = false;
 	if (negative_key == GenericInputBinding::LeftStickLeft)
 	{
-		state = &s_left_stick;
+		state = &nav.left_stick;
 		state->x = value;
 		is_x_axis = true;
 	}
 	else if (negative_key == GenericInputBinding::LeftStickUp)
 	{
-		state = &s_left_stick;
+		state = &nav.left_stick;
 		state->y = value;
 		is_x_axis = false;
 	}
 	else if (negative_key == GenericInputBinding::RightStickLeft)
 	{
-		state = &s_right_stick;
+		state = &nav.right_stick;
 		state->x = value;
 		is_x_axis = true;
 	}
 	else if (negative_key == GenericInputBinding::RightStickUp)
 	{
-		state = &s_right_stick;
+		state = &nav.right_stick;
 		state->y = value;
 		is_x_axis = false;
 	}
@@ -1276,7 +1287,7 @@ void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, Gen
 		{
 			if (neg_active_ptr)
 				*neg_active_ptr = active;
-			ProcessGenericInputEvent(negative_key, layout, active ? 1.0f : 0.0f);
+			ProcessGenericInputEvent(negative_key, layout, active ? 1.0f : 0.0f, controller_id);
 		}
 	}
 	if (positive_key != GenericInputBinding::Unknown)
@@ -1288,7 +1299,7 @@ void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, Gen
 		{
 			if (pos_active_ptr)
 				*pos_active_ptr = active;
-			ProcessGenericInputEvent(positive_key, layout, active ? 1.0f : 0.0f);
+			ProcessGenericInputEvent(positive_key, layout, active ? 1.0f : 0.0f, controller_id);
 		}
 	}
 }
