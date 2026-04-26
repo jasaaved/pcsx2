@@ -1206,9 +1206,17 @@ bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout
 
 void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, GenericInputBinding positive_key, InputLayout layout, float value)
 {
-	static constexpr float DEADZONE = 0.25f;
+	// Activate when the stick crosses a high threshold, release only when it drops below a lower
+	// threshold. This hysteresis prevents two problems:
+	//   1. Spring-back on release: the stick briefly overshoots to the opposite side (~0.3), but
+	//      never reaches the 0.5 activate threshold, so no spurious movement fires.
+	//   2. Wobble while held: value oscillating near 0.25 would toggle active/inactive rapidly,
+	//      resetting ImGui's key-repeat timer each time. With hysteresis, once past 0.5 the key
+	//      stays held until the stick clearly returns below 0.2.
+	static constexpr float ACTIVATE_THRESHOLD = 0.5f;
+	static constexpr float RELEASE_THRESHOLD = 0.2f;
 
-	// Ignore diagonal analog stick input — neither axis fires when both exceed the deadzone.
+	// Ignore diagonal analog stick input — neither axis fires when both exceed the activate threshold.
 	// Also track last sent binary state per direction to avoid bursting duplicate events when
 	// the controller sends many axis updates in quick succession.
 	struct AxisState
@@ -1250,19 +1258,21 @@ void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, Gen
 	if (state)
 	{
 		const float other = is_x_axis ? state->y : state->x;
-		if (std::abs(other) > DEADZONE)
+		if (std::abs(other) > ACTIVATE_THRESHOLD)
 			suppressed_value = 0.0f;
 	}
 
-	// Treat as binary like the D-pad: either fully pressed or released, with a deadzone.
-	// Only forward the event if the binary state actually changed to avoid input bursts.
+	// Treat as binary like the D-pad. Only forward the event if the binary state actually changed
+	// to avoid input bursts. Use hysteresis: activate at the high threshold, release at the low one.
 	bool* neg_active_ptr = state ? (is_x_axis ? &state->x_neg_active : &state->y_neg_active) : nullptr;
 	bool* pos_active_ptr = state ? (is_x_axis ? &state->x_pos_active : &state->y_pos_active) : nullptr;
 
 	if (negative_key != GenericInputBinding::Unknown)
 	{
-		const bool active = suppressed_value < -DEADZONE;
-		if (!neg_active_ptr || active != *neg_active_ptr)
+		const bool currently_active = neg_active_ptr ? *neg_active_ptr : false;
+		const float threshold = currently_active ? RELEASE_THRESHOLD : ACTIVATE_THRESHOLD;
+		const bool active = suppressed_value < -threshold;
+		if (!neg_active_ptr || active != currently_active)
 		{
 			if (neg_active_ptr)
 				*neg_active_ptr = active;
@@ -1271,8 +1281,10 @@ void ImGuiManager::ProcessGenericAxisEvent(GenericInputBinding negative_key, Gen
 	}
 	if (positive_key != GenericInputBinding::Unknown)
 	{
-		const bool active = suppressed_value > DEADZONE;
-		if (!pos_active_ptr || active != *pos_active_ptr)
+		const bool currently_active = pos_active_ptr ? *pos_active_ptr : false;
+		const float threshold = currently_active ? RELEASE_THRESHOLD : ACTIVATE_THRESHOLD;
+		const bool active = suppressed_value > threshold;
+		if (!pos_active_ptr || active != currently_active)
 		{
 			if (pos_active_ptr)
 				*pos_active_ptr = active;
