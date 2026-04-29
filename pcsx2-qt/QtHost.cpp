@@ -56,6 +56,7 @@
 
 #include <cmath>
 #include <csignal>
+#include <cstdlib>
 
 static constexpr u32 SETTINGS_SAVE_DELAY = 1000;
 static constexpr const char* RUNTIME_RESOURCES_URL =
@@ -2402,6 +2403,11 @@ int main(int argc, char* argv[])
 // Qt already applies the user locale on Unix-like systems.
 #ifdef _WIN32
 	std::locale::global(std::locale(""));
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	if (!std::getenv("QT_QPA_PLATFORM") && std::getenv("STEAM_RUNTIME") && !std::getenv("GAMESCOPE_WAYLAND_DISPLAY"))
+		setenv("QT_QPA_PLATFORM", "xcb;wayland", 1);
 #endif
 
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
