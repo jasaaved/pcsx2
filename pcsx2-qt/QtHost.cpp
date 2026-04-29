@@ -2406,8 +2406,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	const char* ld_preload = std::getenv("LD_PRELOAD");
-	const bool under_steam = ld_preload && std::strstr(ld_preload, "gameoverlayrenderer");
+	const bool under_steam = (std::getenv("SteamAppId") != nullptr);
 	if (!std::getenv("QT_QPA_PLATFORM") && under_steam && !std::getenv("GAMESCOPE_WAYLAND_DISPLAY"))
 		setenv("QT_QPA_PLATFORM", "xcb;wayland", 1);
 #endif
