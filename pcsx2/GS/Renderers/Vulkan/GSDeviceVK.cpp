@@ -467,7 +467,7 @@ bool GSDeviceVK::SelectDeviceFeatures()
 	return true;
 }
 
-bool GSDeviceVK::CreateDevice(VkSurfaceKHR surface, bool enable_validation_layer)
+bool GSDeviceVK::CreateDevice(VkSurfaceKHR surface)
 {
 	u32 queue_family_count;
 	vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_count, nullptr);
@@ -611,14 +611,6 @@ bool GSDeviceVK::CreateDevice(VkSurfaceKHR surface, bool enable_validation_layer
 		return false;
 
 	device_info.pEnabledFeatures = &m_device_features;
-
-	// Enable debug layer on debug builds
-	if (enable_validation_layer)
-	{
-		static const char* layer_names[] = {"VK_LAYER_LUNARG_standard_validation"};
-		device_info.enabledLayerCount = 1;
-		device_info.ppEnabledLayerNames = layer_names;
-	}
 
 	// provoking vertex
 	VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_feature = {
@@ -2717,7 +2709,7 @@ bool GSDeviceVK::CreateDeviceAndSwapChain()
 	}
 
 	// Attempt to create the device.
-	if (!CreateDevice(surface, enable_validation_layer))
+	if (!CreateDevice(surface))
 		return false;
 
 	// And critical resources.

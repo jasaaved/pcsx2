@@ -187,7 +187,7 @@ private:
 		bool enable_debug_utils);
 	bool SelectDeviceExtensions(ExtensionList* extension_list, bool enable_surface);
 	bool SelectDeviceFeatures();
-	bool CreateDevice(VkSurfaceKHR surface, bool enable_validation_layer);
+	bool CreateDevice(VkSurfaceKHR surface);
 	bool ProcessDeviceExtensions();
 
 	bool CreateAllocator();
